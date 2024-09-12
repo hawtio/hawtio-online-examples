@@ -41,7 +41,8 @@
   </properties>
 
   <modules>
-    <module>camel-quarkus</module>
+    <module>camel-quarkus-kubernetes</module>
+    <module>camel-quarkus-openshift</module>
     <module>camel-springboot</module>
   </modules>
 

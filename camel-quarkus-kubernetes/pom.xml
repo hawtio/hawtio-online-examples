@@ -1,0 +1,250 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.hawt.online.examples</groupId>
+    <artifactId>hawtio-online-examples</artifactId>
+    <version>1.0.0</version>
+  </parent>
+
+  <artifactId>hawtio-online-example-camel-quarkus-kube</artifactId>
+  <name>Kubernetes Hawtio Online Camel Quarkus Example</name>
+  <description>Hawtio Online :: Sample Kubernetes Camel Quarkus 3.x application</description>
+
+  <properties>
+    <skipITs>true</skipITs>
+
+    <!--
+      ==========================================================================
+      === Jolokia agent configuration for the connection with Hawtio Online
+      ==========================================================================
+
+      It should use HTTPS and SSL client authentication at minimum.
+      The client principal should match those the Hawtio Online instance
+      provides (the default is `hawtio-online.hawtio.svc`).
+    -->
+    <jolokia.protocol>https</jolokia.protocol>
+    <jolokia.host>*</jolokia.host>
+    <jolokia.port>8778</jolokia.port>
+    <jolokia.useSslClientAuthentication>true</jolokia.useSslClientAuthentication>
+    <jolokia.caCert>/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt</jolokia.caCert>
+    <jolokia.clientPrincipal.1>cn=hawtio-online.hawtio.svc</jolokia.clientPrincipal.1>
+    <jolokia.extendedClientCheck>true</jolokia.extendedClientCheck>
+    <jolokia.discoveryEnabled>false</jolokia.discoveryEnabled>
+
+    <!--
+      ==========================================================================
+      === Container/Kubernetes settings
+      ==========================================================================
+    -->
+    <quarkus.container-image.build>true</quarkus.container-image.build>
+    <!--
+      Container registry and group should be changed to those which your
+      application uses.
+    -->
+    <quarkus.container-image.registry>quay.io</quarkus.container-image.registry>
+    <quarkus.container-image.group>hawtio</quarkus.container-image.group>
+    <quarkus.container-image.tag>latest</quarkus.container-image.tag>
+
+    <!-- Jolokia agent settings on the container -->
+    <quarkus.jib.jvm-additional-arguments>
+      -javaagent:lib/main/org.jolokia.jolokia-agent-jvm-${jolokia-version}-javaagent.jar=protocol=${jolokia.protocol}\,host=${jolokia.host}\,port=${jolokia.port}\,useSslClientAuthentication=${jolokia.useSslClientAuthentication}\,caCert=${jolokia.caCert}\,clientPrincipal.1=${jolokia.clientPrincipal.1}\,extendedClientCheck=${jolokia.extendedClientCheck}\,discoveryEnabled=${jolokia.discoveryEnabled}
+    </quarkus.jib.jvm-additional-arguments>
+    <!--
+      This is the requirement of "hawtio-enabled" deployments. A container needs
+      to have a port named "jolokia".
+    -->
+    <quarkus.kubernetes.ports.jolokia.container-port>8778</quarkus.kubernetes.ports.jolokia.container-port>
+
+    <quarkus.kubernetes.image-pull-policy>always</quarkus.kubernetes.image-pull-policy>
+    <!-- Optional labels for ease of management of your pods on Kubernetes/OpenShift -->
+    <quarkus.kubernetes.labels.app>hawtio</quarkus.kubernetes.labels.app>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-bom</artifactId>
+        <version>${quarkus-version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-camel-bom</artifactId>
+        <version>${quarkus-version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Camel Quarkus -->
+    <dependency>
+      <groupId>org.apache.camel.quarkus</groupId>
+      <artifactId>camel-quarkus-log</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.camel.quarkus</groupId>
+      <artifactId>camel-quarkus-stream</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.camel.quarkus</groupId>
+      <artifactId>camel-quarkus-mock</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.camel.quarkus</groupId>
+      <artifactId>camel-quarkus-quartz</artifactId>
+    </dependency>
+    <!--
+      This dependency is mandatory for enabling Camel management
+      via JMX / Hawtio.
+    -->
+    <dependency>
+      <groupId>org.apache.camel.quarkus</groupId>
+      <artifactId>camel-quarkus-management</artifactId>
+    </dependency>
+    <!--
+      This dependency is required for viewing Camel routes source XML.
+    -->
+    <dependency>
+      <groupId>org.apache.camel.quarkus</groupId>
+      <artifactId>camel-quarkus-jaxb</artifactId>
+    </dependency>
+    <!--
+      To enable Camel plugin debugging feature, add this dependency.
+    -->
+    <dependency>
+      <groupId>org.apache.camel.quarkus</groupId>
+      <artifactId>camel-quarkus-debug</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.camel.quarkus</groupId>
+      <artifactId>camel-quarkus-timer</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-agent-jvm</artifactId>
+      <version>${jolokia-version}</version>
+      <classifier>javaagent</classifier>
+    </dependency>
+
+    <!-- Quarkus -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+    </dependency>
+
+    <!-- Deploying to Kubernetes -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-kubernetes</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-container-image-jib</artifactId>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-maven-plugin</artifactId>
+        <version>${quarkus-version}</version>
+        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <goals>
+              <goal>build</goal>
+              <goal>generate-code</goal>
+              <goal>generate-code-tests</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+            <!--suppress UnresolvedMavenProperty -->
+            <maven.home>${maven.home}</maven.home>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <systemPropertyVariables>
+                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                <!--suppress UnresolvedMavenProperty -->
+                <maven.home>${maven.home}</maven.home>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>native</id>
+      <activation>
+        <property>
+          <name>native</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>native-mode-not-supported</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <echo message="!!! WARNING !!!" />
+                    <echo message="Hawtio does not support Quarkus native mode!" />
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

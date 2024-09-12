@@ -47,7 +47,7 @@ java -javaagent:target/quarkus-app/lib/main/org.jolokia.jolokia-agent-jvm-2.0.1-
 
 ## How to deploy it to Kubernetes/OpenShift
 
-This example is intended to be used by deploying to a Kubernetes/OpenShift cluster.
+This example is intended to be used by deploying to a Kubernetes/OpenShift cluster. An [alternative example](https://github.com/hawtio/hawtio-online-examples/camel-quarkus-openshift) is available should the target cluster be OpenShift.
 
 To deploy it to a cluster, firstly change the container image parameters in [pom.xml](pom.xml) to fit your development environment. (The default image name is `quay.io/hawtio/hawtio-online-example-camel-quarkus:latest`, which should be pushed to the `hawtio` organisation on [Quay.io](https://quay.io/).)
 
@@ -80,9 +80,9 @@ $ stern -oraw hawtio-online-example-camel-quarkus
 + hawtio-online-example-camel-quarkus-77f7bf4948-74hmb › hawtio-online-example-camel-quarkus
 I> No access restrictor found, access to any MBean is allowed
 Jolokia: Agent started with URL https://172.17.45.52:8778/jolokia/
- _____________________________________ 
+ _____________________________________
 < Hawtio Online Camel Quarkus Example >
- ------------------------------------- 
+ -------------------------------------
         \   ^__^
          \  (oo)\_______
             (__)\       )\/\

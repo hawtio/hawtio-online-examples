@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
@@ -8,12 +8,19 @@
     <version>1.0.0</version>
   </parent>
 
-  <artifactId>hawtio-online-example-camel-quarkus</artifactId>
-  <name>Hawtio Online Camel Quarkus Example</name>
-  <description>Hawtio Online :: Sample Camel Quarkus 3.x application</description>
+  <artifactId>hawtio-online-example-camel-quarkus-os</artifactId>
+  <name>OpenShift Hawtio Online Camel Quarkus Example</name>
+  <description>Hawtio Online :: Sample OpenShift Camel Quarkus 3.x application</description>
 
   <properties>
     <skipITs>true</skipITs>
+
+    <!--
+      The following are defined in the parent pom
+      * camel-version
+      * quarkus-version
+      * jolokia-version
+    -->
 
     <!--
       ==========================================================================
@@ -32,34 +39,6 @@
     <jolokia.clientPrincipal.1>cn=hawtio-online.hawtio.svc</jolokia.clientPrincipal.1>
     <jolokia.extendedClientCheck>true</jolokia.extendedClientCheck>
     <jolokia.discoveryEnabled>false</jolokia.discoveryEnabled>
-
-    <!--
-      ==========================================================================
-      === Container/Kubernetes settings
-      ==========================================================================
-    -->
-    <quarkus.container-image.build>true</quarkus.container-image.build>
-    <!--
-      Container registry and group should be changed to those which your
-      application uses.
-    -->
-    <quarkus.container-image.registry>quay.io</quarkus.container-image.registry>
-    <quarkus.container-image.group>hawtio</quarkus.container-image.group>
-    <quarkus.container-image.tag>latest</quarkus.container-image.tag>
-
-    <!-- Jolokia agent settings on the container -->
-    <quarkus.jib.jvm-additional-arguments>
-      -javaagent:lib/main/org.jolokia.jolokia-agent-jvm-${jolokia-version}-javaagent.jar=protocol=${jolokia.protocol}\,host=${jolokia.host}\,port=${jolokia.port}\,useSslClientAuthentication=${jolokia.useSslClientAuthentication}\,caCert=${jolokia.caCert}\,clientPrincipal.1=${jolokia.clientPrincipal.1}\,extendedClientCheck=${jolokia.extendedClientCheck}\,discoveryEnabled=${jolokia.discoveryEnabled}
-    </quarkus.jib.jvm-additional-arguments>
-    <!--
-      This is the requirement of "hawtio-enabled" deployments. A container needs
-      to have a port named "jolokia".
-    -->
-    <quarkus.kubernetes.ports.jolokia.container-port>8778</quarkus.kubernetes.ports.jolokia.container-port>
-
-    <quarkus.kubernetes.image-pull-policy>always</quarkus.kubernetes.image-pull-policy>
-    <!-- Optional labels for ease of management of your pods on Kubernetes/OpenShift -->
-    <quarkus.kubernetes.labels.app>hawtio</quarkus.kubernetes.labels.app>
   </properties>
 
   <dependencyManagement>
@@ -82,10 +61,13 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Camel Quarkus -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-openshift</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.apache.camel.quarkus</groupId>
-      <artifactId>camel-quarkus-log</artifactId>
+      <artifactId>camel-quarkus-quartz</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.camel.quarkus</groupId>
@@ -96,9 +78,10 @@
       <artifactId>camel-quarkus-mock</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.camel.quarkus</groupId>
-      <artifactId>camel-quarkus-quartz</artifactId>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
     </dependency>
+
     <!--
       This dependency is mandatory for enabling Camel management
       via JMX / Hawtio.
@@ -107,6 +90,7 @@
       <groupId>org.apache.camel.quarkus</groupId>
       <artifactId>camel-quarkus-management</artifactId>
     </dependency>
+
     <!--
       This dependency is required for viewing Camel routes source XML.
     -->
@@ -114,6 +98,7 @@
       <groupId>org.apache.camel.quarkus</groupId>
       <artifactId>camel-quarkus-jaxb</artifactId>
     </dependency>
+
     <!--
       To enable Camel plugin debugging feature, add this dependency.
     -->
@@ -122,11 +107,9 @@
       <artifactId>camel-quarkus-debug</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.camel.quarkus</groupId>
-      <artifactId>camel-quarkus-timer</artifactId>
-    </dependency>
-
+    <!--
+      Include the jolokia agent jvm for access to JMX beans.
+    -->
     <dependency>
       <groupId>org.jolokia</groupId>
       <artifactId>jolokia-agent-jvm</artifactId>
@@ -134,31 +117,21 @@
       <classifier>javaagent</classifier>
     </dependency>
 
-    <!-- Quarkus -->
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-arc</artifactId>
-    </dependency>
-
-    <!-- Deploying to Kubernetes -->
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-kubernetes</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-container-image-jib</artifactId>
-    </dependency>
-
-    <!-- Testing -->
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-junit5</artifactId>
-      <scope>test</scope>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-junit5</artifactId>
+        <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
     <plugins>
       <plugin>
         <groupId>io.quarkus.platform</groupId>
@@ -171,6 +144,7 @@
               <goal>build</goal>
               <goal>generate-code</goal>
               <goal>generate-code-tests</goal>
+              <goal>native-image-agent</goal>
             </goals>
           </execution>
         </executions>
@@ -178,9 +152,7 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <compilerArgs>
-            <arg>-parameters</arg>
-          </compilerArgs>
+          <parameters>true</parameters>
         </configuration>
       </plugin>
       <plugin>
@@ -188,7 +160,6 @@
         <configuration>
           <systemPropertyVariables>
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-            <!--suppress UnresolvedMavenProperty -->
             <maven.home>${maven.home}</maven.home>
           </systemPropertyVariables>
         </configuration>
@@ -201,15 +172,15 @@
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
-            <configuration>
-              <systemPropertyVariables>
-                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                <!--suppress UnresolvedMavenProperty -->
-                <maven.home>${maven.home}</maven.home>
-              </systemPropertyVariables>
-            </configuration>
           </execution>
         </executions>
+        <configuration>
+          <systemPropertyVariables>
+            <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+            <maven.home>${maven.home}</maven.home>
+          </systemPropertyVariables>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -246,5 +217,4 @@
       </build>
     </profile>
   </profiles>
-
 </project>

@@ -10,6 +10,7 @@ This repository provides a collection of examples that demonstrate how you can m
 
 | Example | Description |
 | ------- | ----------- |
-| [Camel Quarkus](./camel-quarkus/) | A simple Camel Quarkus application example. |
+| [Camel Quarkus for Kubernetes](./camel-quarkus-kubernetes/) | A simple Camel Quarkus application example deployable on all variants of Kubernetes. |
+| [Camel Quarkus for OpenShift](./camel-quarkus-openshift/) | A simple Camel Quarkus application example specifically targeted for deployment on OpenShift. |
 | [Camel Spring Boot](./camel-springboot/) | A simple Camel Spring Boot application example. |
 | [Camel K](./camel-k/) | A simple Camel K integration example. |

@@ -31,22 +31,4 @@ jobs:
           cache: 'maven'
       - name: Build
         run: |
-          mvn --batch-mode --no-transfer-progress install -Djkube.build.strategy=docker
-      - name: Push image to Quay.io
-        if: github.event_name == 'push'
-        env:
-          USERNAME: ${{ secrets.QUAY_USERNAME }}
-          PASSWORD: ${{ secrets.QUAY_PASSWORD }}
-        run: |
-          docker login --help
-          docker login -u $USERNAME -p $PASSWORD quay.io
-          docker tag quay.io/hawtio/hawtio-online-example-camel-quarkus:latest quay.io/hawtio/hawtio-online-example-camel-quarkus:${{matrix.java}}
-          docker tag quay.io/hawtio/hawtio-online-example-camel-springboot:latest quay.io/hawtio/hawtio-online-example-camel-springboot:${{matrix.java}}
-
-          docker push quay.io/hawtio/hawtio-online-example-camel-quarkus:${{matrix.java}}
-          docker push quay.io/hawtio/hawtio-online-example-camel-springboot:${{matrix.java}}
-
-          if [[ "${{matrix.java}}" == "21" ]]; then
-            docker push quay.io/hawtio/hawtio-online-example-camel-quarkus:latest
-            docker push quay.io/hawtio/hawtio-online-example-camel-springboot:latest
-          fi
+          mvn --batch-mode --no-transfer-progress install

@@ -1,0 +1,50 @@
+name: Image
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  build:
+    if: github.repository_owner == 'hawtio'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['17', '21']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+      - name: Build
+        run: |
+          mvn --batch-mode --no-transfer-progress install -Djkube.build.strategy=docker
+      - name: List images
+        run: |
+          docker images
+      - name: Push image to Quay.io
+        if: github.event_name == 'push'
+        env:
+          USERNAME: ${{ secrets.QUAY_USERNAME }}
+          PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+        run: |
+          docker login --help
+          docker login -u $USERNAME -p $PASSWORD quay.io
+          docker tag quay.io/hawtio/hawtio-online-example-camel-quarkus:latest quay.io/hawtio/hawtio-online-example-camel-quarkus:${{matrix.java}}
+          docker tag quay.io/hawtio/hawtio-online-example-camel-springboot:latest quay.io/hawtio/hawtio-online-example-camel-springboot:${{matrix.java}}
+
+          docker push quay.io/hawtio/hawtio-online-example-camel-quarkus:${{matrix.java}}
+          docker push quay.io/hawtio/hawtio-online-example-camel-springboot:${{matrix.java}}
+
+          if [[ "${{matrix.java}}" == "21" ]]; then
+            docker push quay.io/hawtio/hawtio-online-example-camel-quarkus:latest
+            docker push quay.io/hawtio/hawtio-online-example-camel-springboot:latest
+          fi

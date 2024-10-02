@@ -38,7 +38,7 @@ jobs:
         run: |
           docker login --help
           docker login -u $USERNAME -p $PASSWORD quay.io
-          docker tag quay.io/hawtio/hawtio-online-example-camel-quarkus:latest quay.io/hawtio/hawtio-online-example-camel-quarkus:${{matrix.java}}
+          docker tag quay.io/hawtio/hawtio-online-example-camel-quarkus-kube:latest quay.io/hawtio/hawtio-online-example-camel-quarkus:${{matrix.java}}
           docker tag quay.io/hawtio/hawtio-online-example-camel-springboot:latest quay.io/hawtio/hawtio-online-example-camel-springboot:${{matrix.java}}
 
           docker push quay.io/hawtio/hawtio-online-example-camel-quarkus:${{matrix.java}}

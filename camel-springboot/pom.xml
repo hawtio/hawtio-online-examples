@@ -13,9 +13,18 @@
   <description>Hawtio Online :: Sample Camel Spring Boot 3.x application</description>
 
   <properties>
-    <jkube.generator.name>quay.io/hawtio/%a:latest</jkube.generator.name>
+    <jkube.container-image.name>quay.io/hawtio/%a:latest</jkube.container-image.name>
     <!-- Use Jib in order not to depend on docker nor podman -->
     <jkube.build.strategy>jib</jkube.build.strategy>
+
+    <jolokia.protocol>https</jolokia.protocol>
+    <jolokia.host>*</jolokia.host>
+    <jolokia.port>8778</jolokia.port>
+    <jolokia.useSslClientAuthentication>true</jolokia.useSslClientAuthentication>
+    <jolokia.caCert>/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt</jolokia.caCert>
+    <jolokia.clientPrincipal.1>cn=hawtio-online.hawtio.svc</jolokia.clientPrincipal.1>
+    <jolokia.extendedClientCheck>true</jolokia.extendedClientCheck>
+    <jolokia.discoveryEnabled>false</jolokia.discoveryEnabled>
   </properties>
 
   <dependencyManagement>
@@ -112,6 +121,31 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin-version}</version>
+        <executions>
+          <execution>
+            <id>copy-jolokia-agent</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.jolokia</groupId>
+                  <artifactId>jolokia-agent-jvm</artifactId>
+                  <version>${jolokia-version}</version>
+                  <classifier>javaagent</classifier>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.basedir}/target</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${spring-boot-version}</version>
@@ -136,19 +170,39 @@
           </execution>
         </executions>
         <configuration>
-          <resources>
-            <env>
-              <!--
-                By default, JKube plugin sets up a Jolokia agent with HTTPS and
-                SSL client authentication enabled. The only necessary configurations
-                are the client principal that matches the Hawtio Online instance
-                (the default is `hawtio-online.hawtio.svc`) and the CA cert to
-                specify `service-ca.crt` instead of the default `ca.crt`.
-              -->
-              <AB_JOLOKIA_AUTH_OPENSHIFT>cn=hawtio-online.hawtio.svc</AB_JOLOKIA_AUTH_OPENSHIFT>
-              <AB_JOLOKIA_OPTS>caCert=/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt</AB_JOLOKIA_OPTS>
-            </env>
-          </resources>
+          <images>
+            <image>
+              <name>${jkube.container-image.name}</name>
+              <build>
+                <from>registry.access.redhat.com/ubi9/openjdk-21:latest</from>
+                <workdir>/deployments</workdir>
+                <assembly>
+                  <targetDir>/deployments</targetDir>
+                  <inline>
+                    <id>jolokia-agent</id>
+                    <files>
+                      <file>
+                        <source>
+                          ${project.basedir}/target/jolokia-agent-jvm-${jolokia-version}-javaagent.jar
+                        </source>
+                        <outputDirectory>opt</outputDirectory>
+                      </file>
+                    </files>
+                  </inline>
+                </assembly>
+                <env>
+                  <JAVA_APP_DIR>/deployments</JAVA_APP_DIR>
+                  <JAVA_MAIN_CLASS>org.springframework.boot.loader.launch.JarLauncher</JAVA_MAIN_CLASS>
+                  <JAVA_OPTS_APPEND>-javaagent:opt/jolokia-agent-jvm-${jolokia-version}-javaagent.jar=protocol=${jolokia.protocol},host=${jolokia.host},port=${jolokia.port},useSslClientAuthentication=${jolokia.useSslClientAuthentication},caCert=${jolokia.caCert},clientPrincipal.1=${jolokia.clientPrincipal.1},extendedClientCheck=${jolokia.extendedClientCheck},discoveryEnabled=${jolokia.discoveryEnabled}</JAVA_OPTS_APPEND>
+                </env>
+                <ports>
+                  <port>8080</port>
+                  <port>8778</port>
+                  <port>9779</port>
+                </ports>
+              </build>
+            </image>
+          </images>
         </configuration>
       </plugin>
     </plugins>

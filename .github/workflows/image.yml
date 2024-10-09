@@ -16,8 +16,6 @@ jobs:
       matrix:
         java: ['17', '21']
     steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Set up Java
@@ -35,20 +33,20 @@ jobs:
           docker login --help
           docker login -u $USERNAME -p $PASSWORD quay.io
 
-          mvn --batch-mode --no-transfer-progress -pl '!camel-quarkus-openshift' install \
-            -Dquarkus.jib.base-jvm-image=registry.access.redhat.com/ubi9/openjdk-${{ matrix.java }}-runtime:latest \
-            -Dquarkus.jib.platforms=linux/amd64,linux/arm64,linux/ppc64le,linux/s390x \
-            -Dquarkus.container-image.name=hawtio-online-example-camel-quarkus \
-            -Dquarkus.container-image.tag=${{ matrix.java }} \
-            -Dquarkus.container-image.push=true \
-            -Djkube.generator.from=registry.access.redhat.com/ubi9/openjdk-${{ matrix.java }}:latest \
-            -Djkube.build.strategy=docker
+          mvn --batch-mode --no-transfer-progress -pl 'camel-quarkus-kubernetes' install \
+          -Dquarkus.jib.base-jvm-image=registry.access.redhat.com/ubi9/openjdk-${{ matrix.java }}-runtime:latest \
+          -Dquarkus.jib.platforms=linux/amd64,linux/arm64,linux/ppc64le,linux/s390x \
+          -Dquarkus.container-image.name=hawtio-online-example-camel-quarkus \
+          -Dquarkus.container-image.tag=${{ matrix.java }} \
+          -Dquarkus.container-image.push=true
 
-          docker buildx build -t quay.io/hawtio/hawtio-online-example-camel-springboot:${{ matrix.java }} \
-            --platform linux/amd64,linux/arm64,linux/ppc64le,linux/s390x \
-            --provenance=false \
-            --push \
-            camel-springboot/target/docker/quay.io/hawtio/hawtio-online-example-camel-springboot/latest/build/
+          mvn --batch-mode --no-transfer-progress -pl 'camel-springboot' package k8s:build k8s:push \
+          -Djkube.container-image.from=registry.access.redhat.com/ubi9/openjdk-${{ matrix.java }}:latest \
+          -Djkube.container-image.platforms.1=linux/amd64 \
+          -Djkube.container-image.platforms.2=linux/arm64 \
+          -Djkube.container-image.platforms.3=linux/ppc64le \
+          -Djkube.container-image.platforms.4=linux/s390x \
+          -Djkube.container-image.name=quay.io/hawtio/hawtio-online-example-camel-springboot:${{ matrix.java }}
 
           if [[ "${{ matrix.java }}" == "21" ]]; then
             docker buildx imagetools create -t quay.io/hawtio/hawtio-online-example-camel-quarkus:latest quay.io/hawtio/hawtio-online-example-camel-quarkus:${{ matrix.java }}

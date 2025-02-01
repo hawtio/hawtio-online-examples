@@ -27,7 +27,7 @@
     <camel-version>4.8.1</camel-version>
     <quarkus-version>3.17.2</quarkus-version>
     <spring-version>6.1.4</spring-version>
-    <spring-boot-version>3.4.0</spring-boot-version>
+    <spring-boot-version>3.4.2</spring-boot-version>
 
     <jolokia-version>2.1.2</jolokia-version>
     <prometheus-jmx-exporter-version>0.20.0</prometheus-jmx-exporter-version>
